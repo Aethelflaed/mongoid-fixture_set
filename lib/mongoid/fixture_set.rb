@@ -16,11 +16,11 @@ module Mongoid
         @context_class ||= Class.new
       end
 
-      def cached_fixtures(*keys_to_fetch)
-        if keys_to_fetch.empty?
-          @@cached_fixtures.values
-        else
+      def cached_fixtures(keys_to_fetch = nil)
+        if keys_to_fetch
           @@cached_fixtures.values_at(*keys_to_fetch)
+        else
+          @@cached_fixtures.values
         end
       end
 
