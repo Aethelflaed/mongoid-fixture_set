@@ -1,0 +1,6 @@
+test:
+  sessions:
+    default:
+      database: mongoid_fixture_set_test
+      hosts:
+        - localhost:27017

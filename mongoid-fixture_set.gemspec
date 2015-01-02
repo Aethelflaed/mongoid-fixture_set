@@ -11,10 +11,11 @@ Gem::Specification.new do |s|
   s.summary     = 'Fixtures for Mongoid'
   s.description = 'Let you use fixtures with Mongoid the same way you did with ActiveRecord'
 
-  s.files       = Dir['{lib}/**/*', 'MIT-LICENSE', 'README.rdoc']
+  s.files       = Dir['{lib}/**/*', 'MIT-LICENSE', 'Rakefile', 'README.rdoc']
   s.test_files  = Dir['test/**/*']
 
-  s.add_dependency 'rails',   '~> 4.0'
-  s.add_dependency 'mongoid', '~> 4.0'
+  s.add_dependency 'mongoid',       '~> 4.0'
+  s.add_dependency 'activesupport', '~> 4.0'
+  s.add_development_dependency 'rake', '>= 0.9'
 end
 
