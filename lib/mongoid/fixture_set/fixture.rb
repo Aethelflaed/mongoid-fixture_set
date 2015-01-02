@@ -29,7 +29,7 @@ module Mongoid
       def find
         if model_class
           model_class.unscoped do
-            model_class.find_by('__fixture_name' => name)
+            model_class.find(Mongoid::FixtureSet.identify(name))
           end
         else
           raise FixtureClassNotFound, "No class attached to find."
