@@ -1,3 +1,9 @@
 geoffroy:
   firstname: Geoffroy
   lastname: Planquart
+  main_group: sudoers
+  groups:
+    - print
+margot:
+  firstname: Margot
+  lastname: Schutz
