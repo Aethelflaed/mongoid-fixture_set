@@ -4,6 +4,6 @@ geoffroy:
   main_group: sudoers
   groups:
     - print
-margot:
+user1:
   firstname: Margot
-  lastname: Schutz
+  lastname: Last

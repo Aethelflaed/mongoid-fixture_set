@@ -1,8 +1,11 @@
 sudoers:
   name: Sudoers!
+  something: orga1 (Organisation)
 print:
   name: Print
-margot:
+  users:
+    - user1
+group1:
   name: Margot
   main_users:
-    - margot
+    - user1

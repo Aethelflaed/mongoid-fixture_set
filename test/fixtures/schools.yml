@@ -1,0 +1,9 @@
+school:
+  name: School
+  groups:
+    - group1
+<% 5.times do |i| %>
+school<%= i %>:
+  name: School <%= i %>
+<% end %>
+

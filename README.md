@@ -12,14 +12,8 @@ If you'd like to contribute, let me know first, but pull requests are welcome !
 
 - Creation of a document from an YAML file.
 - belongs_to relations
-
-## What should yet be tested
-
 - ERB inside .yml files
 - Polymorphic belongs_to
-
-## Under development
-
 - has_many relations
 - has_and_belongs_to_many relations
 

@@ -156,7 +156,8 @@ module Mongoid
           when :belongs_to
             if value = attributes.delete(relation.name.to_s)
               if relation.polymorphic? && value.sub!(/\s*\(([^)]*)\)\s*/, '')
-                attributes[relation.foreign_key.sub(/_id$/, '_type')] = $1
+                type = $1
+                attributes[relation.foreign_key.sub(/_id$/, '_type')] = type
               end
               attributes[relation.foreign_key] = self.class.identify(value)
             end
