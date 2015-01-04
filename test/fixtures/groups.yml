@@ -2,5 +2,7 @@ sudoers:
   name: Sudoers!
 print:
   name: Print
-users:
-  name: All Users
+margot:
+  name: Margot
+  main_users:
+    - margot

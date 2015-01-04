@@ -74,9 +74,7 @@ module Mongoid
           end
           collection_documents.each do |model, documents|
             documents.each do |attributes|
-              document = model.new
-              document.attributes.update(attributes)
-              document.save
+              create_or_update_document(model, attributes)
             end
           end
         end
@@ -86,8 +84,23 @@ module Mongoid
         return cached_fixtures(fixture_set_names)
       end
 
+      def create_or_update_document(model, attributes)
+        document = model.find_or_initialize_by('_id' => attributes['_id'])
+        keys = (attributes.keys + document.attributes.keys).uniq
+        attrs = Hash[keys.collect do |key|
+          if attributes[key].is_a?(Array) || document.attributes[key].is_a?(Array)
+            value = [attributes[key], document.attributes[key]].flatten(1).compact
+          else
+            value = attributes[key] || document.attributes[key]
+          end
+          [key, value]
+        end]
+        document.assign_attributes(attrs)
+        document.save(validate: false)
+      end
+
       # Returns a consistent, platform-independent identifier for +label+.
-      # Integer identifiers are values less than 2^30. UUIDs are RFC 4122 version 5 SHA-1 hashes.
+      # UUIDs are RFC 4122 version 5 SHA-1 hashes.
       def identify(label)
         Digest::UUID.uuid_v5(Digest::UUID::OID_NAMESPACE, label.to_s)
       end
@@ -130,7 +143,6 @@ module Mongoid
 
       documents[model_class] = fixtures.map do |label, fixture|
         attributes = fixture.to_hash
-        attributes['__fixture_name'] = fixture.name
 
         set_attributes_timestamps(attributes, model_class)
         
@@ -148,14 +160,42 @@ module Mongoid
           when :belongs_to
             if value = attributes.delete(relation.name.to_s)
               if relation.polymorphic? && value.sub!(/\s*\(([^)]*)\)\s*/, '')
-                attributes["#{relation.name}_type"] = $1
+                attributes[relation.foreign_key.sub(/_id$/, '_type')] = $1
               end
-              attributes["#{relation.name}_id"] = self.class.identify(value)
+              attributes[relation.foreign_key] = self.class.identify(value)
+            end
+          when :has_many
+            if values = attributes.delete(relation.name.to_s)
+              values.each do |value|
+                id = self.class.identify(value)
+                if relation.polymorphic?
+                  self.class.create_or_update_document(relation.class_name.constantize, {
+                    '_id' => id,
+                    "#{relation.as}_id" => attributes['_id'],
+                    "#{relation.as}_type" => model_class.name,
+                  })
+                else
+                  self.class.create_or_update_document(relation.class_name.constantize, {
+                    '_id' => id,
+                    relation.foreign_key => attributes['_id'],
+                  })
+                end
+              end
             end
           when :has_and_belongs_to_many
             if values = attributes.delete(relation.name.to_s)
-              attributes["#{relation.name.to_s.singularize}_ids"] = values.map{|v| self.class.identify(v)}
-              # FIXME: this does not set the other side of the relation
+              key = "#{relation.name.to_s.singularize}_ids"
+              attributes[key] = []
+
+              values.each do |value|
+                id = self.class.identify(value)
+                attributes[key] << id
+
+                self.class.create_or_update_document(relation.class_name.constantize, {
+                  '_id' => id,
+                  relation.inverse_foreign_key => [attributes['_id']]
+                })
+              end
             end
           end
         end

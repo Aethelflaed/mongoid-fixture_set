@@ -3,7 +3,7 @@ require 'pry'
 
 module Mongoid
   class FixtureSetTest < BaseTest
-    def test_should_create_fixture_set
+    def test_should_initialize_fixture_set
       fs = Mongoid::FixtureSet.new('users', 'User', 'test/fixtures/users')
       assert_equal User, fs.model_class
       fixture = fs['geoffroy']
