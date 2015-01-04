@@ -69,8 +69,11 @@ module Mongoid
 
         fixture_sets.each do |fs|
           fs.collection_documents.each do |model, documents|
-            documents.each do |attributes|
-              create_or_update_document(model, attributes)
+            model = class_names[model]
+            if model
+              documents.each do |attributes|
+                create_or_update_document(model, attributes)
+              end
             end
           end
         end
@@ -102,7 +105,7 @@ module Mongoid
       end
     end
 
-    attr_reader :name, :path, :model_class, :collection_name
+    attr_reader :name, :path, :model_class, :class_name
     attr_reader :fixtures
 
     def initialize(name, class_name, path)
@@ -111,11 +114,13 @@ module Mongoid
 
       if class_name.is_a?(Class)
         @model_class = class_name
-      else
+      elsif class_name
         @model_class = class_name.safe_constantize
       end
 
-      @collection_name = @model_class.collection_name
+      @class_name = @model_class.respond_to?(:name) ?
+        @model_class.name :
+        self.class.default_fixture_model_name(name)
 
       @fixtures = read_fixture_files
     end
@@ -131,10 +136,12 @@ module Mongoid
       fixtures.delete('DEFAULTS')
 
       # track any join collection we need to insert later
-      documents = Hash.new { |h, collection| h[collection] = [] }
+      documents = Hash.new
 
-      documents[model_class] = fixtures.map do |label, fixture|
+      documents[class_name] = fixtures.map do |label, fixture|
         attributes = fixture.to_hash
+
+        next attributes if model_class.nil?
 
         set_attributes_timestamps(attributes, model_class)
         
@@ -144,8 +151,6 @@ module Mongoid
         end
 
         attributes['_id'] = self.class.identify(label)
-
-        # should work as is for STI
 
         model_class.relations.each do |name, relation|
           case relation.macro

@@ -19,6 +19,20 @@ module Mongoid
       assert_equal 0, fs.count
     end
 
+    def test_should_create_not_model_fixture
+      Mongoid::FixtureSet.reset_cache
+      fs = Mongoid::FixtureSet.create_fixtures('test/fixtures', %w(not_models))
+      fs = fs.first
+      fixture = fs['error']
+
+      begin
+        fixture.find
+        assert false, 'No exception has been raised'
+      rescue Mongoid::FixtureSet::FixtureClassNotFound
+        assert true
+      end
+    end
+
     def test_should_create_fixtures
       Mongoid::FixtureSet.reset_cache
       fs = Mongoid::FixtureSet.create_fixtures('test/fixtures/', %w(users groups schools organisations))
