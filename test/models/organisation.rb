@@ -1,5 +1,6 @@
 class Organisation
   include Mongoid::Document
+  include Mongoid::Timestamps::Created
 
   field :name
 

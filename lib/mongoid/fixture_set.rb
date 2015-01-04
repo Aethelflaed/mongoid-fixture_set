@@ -124,10 +124,6 @@ module Mongoid
       fixtures[x]
     end
 
-    def []=(k,v)
-      fixtures[k] = v
-    end
-
     # Returns a hash of documents to be inserted. The key is the model class, the value is
     # a list of documents to insert in th relative collection.
     def collection_documents
@@ -210,7 +206,7 @@ module Mongoid
       if model_class < Mongoid::Timestamps::Created::Short
         attributes['c_at'] = now        unless attributes.has_key?('c_at')
       elsif model_class < Mongoid::Timestamps::Created
-        attributes['created_at'] = now  unless attributes.has_key/('created_at')
+        attributes['created_at'] = now  unless attributes.has_key?('created_at')
       end
 
       if model_class < Mongoid::Timestamps::Updated::Short

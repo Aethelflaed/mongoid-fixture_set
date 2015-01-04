@@ -1,5 +1,6 @@
 class School
   include Mongoid::Document
+  include Mongoid::Timestamps::Updated
 
   field :name
 

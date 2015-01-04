@@ -27,12 +27,8 @@ module Mongoid
       alias :to_hash :fixture
 
       def find
-        if model_class
-          model_class.unscoped do
-            model_class.find(Mongoid::FixtureSet.identify(name))
-          end
-        else
-          raise FixtureClassNotFound, "No class attached to find."
+        model_class.unscoped do
+          model_class.find(Mongoid::FixtureSet.identify(name))
         end
       end
     end

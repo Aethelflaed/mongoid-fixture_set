@@ -1,5 +1,6 @@
 class User
   include Mongoid::Document
+  include Mongoid::Timestamps::Updated::Short
 
   field :firstname
   field :lastname

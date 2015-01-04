@@ -4,15 +4,30 @@ require 'pry'
 module Mongoid
   class FixtureSetTest < BaseTest
     def test_should_initialize_fixture_set
+      Mongoid::FixtureSet.reset_cache
       fs = Mongoid::FixtureSet.new('users', 'User', 'test/fixtures/users')
       assert_equal User, fs.model_class
       fixture = fs['geoffroy']
+      assert_equal 'User', fixture.class_name
       assert_equal 'Geoffroy', fixture['firstname']
       assert_equal 'Planquart', fixture['lastname']
     end
 
+    def test_should_not_create_fixtures
+      Mongoid::FixtureSet.reset_cache
+      fs = Mongoid::FixtureSet.create_fixtures('test/fixtures/', [])
+      assert_equal 0, fs.count
+    end
+
     def test_should_create_fixtures
+      Mongoid::FixtureSet.reset_cache
       fs = Mongoid::FixtureSet.create_fixtures('test/fixtures/', %w(users groups schools organisations))
+
+      users = fs.find{|x| x.model_class == User}
+      f_geoffroy = users['geoffroy']
+
+      assert_equal 6, School.count
+      assert_equal 4, User.count
 
       geoffroy = User.find_by(firstname: 'Geoffroy')
       user1 = User.find_by(firstname: 'Margot')
@@ -22,8 +37,7 @@ module Mongoid
       orga1 = Organisation.find_by(name: '1 Organisation')
       school = School.find_by(name: 'School')
 
-      assert_equal 6, School.count
-
+      assert_equal geoffroy, f_geoffroy.find
       assert_equal 2, print.users.count
       assert print.users.include?(geoffroy)
       assert print.users.include?(user1)

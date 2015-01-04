@@ -1,4 +1,7 @@
 require 'bundler/setup'
+require 'simplecov'
+SimpleCov.start if ENV['COVERAGE']
+
 require 'minitest/autorun'
 require 'mongoid'
 
