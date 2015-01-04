@@ -68,11 +68,7 @@ module Mongoid
         update_all_loaded_fixtures fixtures_map
 
         fixture_sets.each do |fs|
-          collection_documents = fs.collection_documents
-          collection_documents.each_key do |model|
-            model.delete_all
-          end
-          collection_documents.each do |model, documents|
+          fs.collection_documents.each do |model, documents|
             documents.each do |attributes|
               create_or_update_document(model, attributes)
             end
