@@ -2,25 +2,69 @@
 
 This projects aims to provide fixtures for Mongoid the same way you have them with ActiveRecord.
 
-I am relying on the source of ActiveRecord and Mongoid to create this gem, which is in an early development and not yet considered stable enough to use it in production.
+I am relying on the source of ActiveRecord and Mongoid to create this gem.
 
 Please report any issue you may find.
 
-If you'd like to contribute, let me know first, but pull requests are welcome !
+If you'd like to contribute, but pull requests are welcome!
+
+## Install
+
+I still have to package the gem (once I consider it stable enough), so for the moment if you want to use it, you should use this github repo:
+
+```ruby
+gem 'mongoid-fixture_set', github: 'Aethelflaed/mongoid-fixture_set'
+```
+
+## How to use
+
+In your tests, add:
+
+```ruby
+class ActiveSupport::TestCase
+  include Mongoid::FixtureSet::TestHelper
+  self.fixture_path = "#{Rails.root}/test/fixtures"
+end
+```
+
+This is also done by `ActiveRecord`, but magically in the railties.
+
+Then when you want to access a fixture:
+
+```ruby
+class UsersControllerTest < ActionController::TestCase
+  setup do
+    @resource = users(:geoffroy)
+  end
+  
+  test 'should get show' do
+    get :show, id: @resource
+    assert_response :success
+  end
+end
+```
 
 ## Currently working features
 
 - Creation of a document from an YAML file.
-- belongs_to relations
-- ERB inside .yml files
-- Polymorphic belongs_to
-- has_many relations
-- has_and_belongs_to_many relations
+- `belongs_to` relations
+- ERB inside YAML files
+- YAML DEFAULTS feature
+- Polymorphic `belongs_to`
+- `has_many` relations
+- `has_and_belongs_to_many` relations
+- `TestHelper` module to include in your tests
 
-## Next steps
+## Notes
 
-- Integration in rails
+Original fixtures from `ActiveRecord` also uses a selection based on `class_names` for which I haven't seen any use case, so I did not port this feature yet.
 
+I did not find how `ActiveRecord::TestFixtures` defines its `fixture_table_names` so I'm simply searching for *all* YAML files under `self.fixture_path`, which is enough for what I want.
+
+This gem sets the ID of each document to the UUID v5 generated from `#{model_class}##{fixture_name}`, so objects won't be created twice but simply updated it you try to create the same fixture again.
+This is used to set the relations, as we can compute a document ID before it even exists.
+
+Array attributes are also receiving a special treatment, i.e. they are joined with new values, not replaced by the new one. This is used for `has_and_belongs_to_many` relations.
 
 ## License
 
