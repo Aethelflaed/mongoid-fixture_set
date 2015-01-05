@@ -101,8 +101,8 @@ module Mongoid
 
       # Returns a consistent, platform-independent identifier for +label+.
       # UUIDs are RFC 4122 version 5 SHA-1 hashes.
-      def identify(label)
-        Digest::UUID.uuid_v5(Digest::UUID::OID_NAMESPACE, label.to_s)
+      def identify(model, label)
+        Digest::UUID.uuid_v5(Digest::UUID::OID_NAMESPACE, "#{model}##{label}")
       end
     end
 
@@ -151,22 +151,24 @@ module Mongoid
           attributes[key] = value.gsub("$LABEL", label) if value.is_a?(String)
         end
 
-        attributes['_id'] = self.class.identify(label)
+        attributes['_id'] = self.class.identify(class_name, label)
 
         model_class.relations.each do |name, relation|
           case relation.macro
           when :belongs_to
             if value = attributes.delete(relation.name.to_s)
+              id = self.class.identify(relation.class_name, value)
               if relation.polymorphic? && value.sub!(/\s*\(([^)]*)\)\s*/, '')
                 type = $1
                 attributes[relation.foreign_key.sub(/_id$/, '_type')] = type
+                id = self.class.identify(type, value)
               end
-              attributes[relation.foreign_key] = self.class.identify(value)
+              attributes[relation.foreign_key] = id
             end
           when :has_many
             if values = attributes.delete(relation.name.to_s)
               values.each do |value|
-                id = self.class.identify(value)
+                id = self.class.identify(relation.class_name, value)
                 if relation.polymorphic?
                   self.class.create_or_update_document(relation.class_name.constantize, {
                     '_id' => id,
@@ -187,7 +189,7 @@ module Mongoid
               attributes[key] = []
 
               values.each do |value|
-                id = self.class.identify(value)
+                id = self.class.identify(relation.class_name, value)
                 attributes[key] << id
 
                 self.class.create_or_update_document(relation.class_name.constantize, {
