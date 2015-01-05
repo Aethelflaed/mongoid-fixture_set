@@ -4,5 +4,6 @@ class Address
   embedded_in :place, polymorphic: true
 
   field :city
+  field :real, type: Boolean, default: true
 end
 

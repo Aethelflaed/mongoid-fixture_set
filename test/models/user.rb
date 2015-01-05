@@ -8,6 +8,8 @@ class User
   field :firstname
   field :lastname
 
+  field :default, type: Boolean, default: true
+
   belongs_to :main_group, class_name: 'Group', inverse_of: :main_users
 
   has_and_belongs_to_many :groups

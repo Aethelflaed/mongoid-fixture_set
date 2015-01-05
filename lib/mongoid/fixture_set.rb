@@ -116,8 +116,7 @@ module Mongoid
             if (document.changes[name] && !document.changes[name][1].nil?) ||
               is_new && document[name]
 
-              sanitize_new_embedded_documents(document.public_send(relation.name), true)
-              document[name].delete('_id')
+              embedded_document_set_default_values(document.public_send(relation.name), document[name])
             end
           when :embeds_many
             if (document.changes[name] && !document.changes[name][1].nil?) ||
@@ -125,11 +124,20 @@ module Mongoid
 
               embeddeds = document.public_send(relation.name)
               embeddeds.each_with_index do |embedded, i|
-                sanitize_new_embedded_documents(embedded, true)
-                document[name][i].delete('_id')
+                embedded_document_set_default_values(embedded, document[name][i])
               end
             end
           end
+        end
+      end
+
+      def embedded_document_set_default_values(document, attributes)
+        sanitize_new_embedded_documents(document, true)
+        attributes.delete('_id')
+        document.fields.select do |k, v|
+          k != '_id' && v.default_val != nil && attributes[k] == document[k]
+        end.each do |k, v|
+          attributes.delete(k)
         end
       end
 
