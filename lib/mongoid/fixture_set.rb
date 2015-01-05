@@ -106,7 +106,7 @@ module Mongoid
       # Returns a consistent, platform-independent identifier for +label+.
       # UUIDs are RFC 4122 version 5 SHA-1 hashes.
       def identify(model, label)
-        Digest::UUID.uuid_v5(Digest::UUID::OID_NAMESPACE, "#{model}##{label}")
+        Digest::UUID.uuid_v5(Digest::UUID::OID_NAMESPACE, "#{model}##{label}").gsub('-', '')
       end
     end
 

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mongoid-fixture_set (1.1.0)
+    mongoid-fixture_set (1.1.1)
       activesupport (>= 4.2)
       mongoid (~> 4.0)
 
