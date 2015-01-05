@@ -2,6 +2,9 @@ class User
   include Mongoid::Document
   include Mongoid::Timestamps::Updated::Short
 
+  embeds_one :address, as: :place
+  embeds_many :homes
+
   field :firstname
   field :lastname
 

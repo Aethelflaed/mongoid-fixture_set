@@ -7,4 +7,9 @@ geoffroy:
 user1:
   firstname: Margot
   lastname: Last
-  fuckit: true
+  address:
+    city: Strasbourg
+  homes:
+    - name: Home
+      address:
+        city: Strasbourg

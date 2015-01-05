@@ -104,8 +104,33 @@ module Mongoid
             document[key] = attributes[key] || document[key]
           end
         end
+        sanitize_new_embedded_documents(document)
         document.save(validate: false)
         return document
+      end
+
+      def sanitize_new_embedded_documents(document, is_new = false)
+        document.relations.each do |name, relation|
+          case relation.macro
+          when :embeds_one
+            if (document.changes[name] && !document.changes[name][1].nil?) ||
+              is_new && document[name]
+
+              sanitize_new_embedded_documents(document.public_send(relation.name), true)
+              document[name].delete('_id')
+            end
+          when :embeds_many
+            if (document.changes[name] && !document.changes[name][1].nil?) ||
+              is_new && document[name]
+
+              embeddeds = document.public_send(relation.name)
+              embeddeds.each_with_index do |embedded, i|
+                sanitize_new_embedded_documents(embedded, true)
+                document[name][i].delete('_id')
+              end
+            end
+          end
+        end
       end
 
       def find_or_create_document(model, fixture_name)

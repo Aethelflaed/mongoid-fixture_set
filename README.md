@@ -61,6 +61,12 @@ I did not find how `ActiveRecord::TestFixtures` defines its `fixture_table_names
 
 Array attributes are receiving a special treatment, i.e. they are joined with new values, not replaced by the new one. This is used for `has_and_belongs_to_many` relations.
 
+Documents are stored with a special attribute `__fixture_name` which is used to retrieve it and establish relations
+
+## Todo
+
+Remove `__fixture_name` from documents, map it in a hash instead to get the ID.
+
 ## License
 
 This project rocks and uses MIT-LICENSE.

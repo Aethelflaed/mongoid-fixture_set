@@ -51,6 +51,7 @@ module Mongoid
       orga1 = Organisation.find_by(name: '1 Organisation')
       school = School.find_by(name: 'School')
 
+      assert_equal 1, user1.homes.count
       assert_equal geoffroy, f_geoffroy.find
       assert_equal 2, print.users.count
       assert print.users.include?(geoffroy)
