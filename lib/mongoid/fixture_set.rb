@@ -1,6 +1,7 @@
 require 'mongoid/fixture_set/fixture'
 require 'mongoid/fixture_set/file'
 require 'mongoid/fixture_set/class_cache'
+require 'mongoid/fixture_set/test_helper'
 
 require 'active_support/core_ext/digest/uuid'
 
