@@ -68,6 +68,7 @@ module Mongoid
         @@fixtures_loaded ||= false
 
         if @@fixtures_loaded && self.class.load_fixtures_once && !Mongoid::FixtureSet.cache_empty?
+          self.class.fixtures(:all)
           @loaded_fixtures = Mongoid::FixtureSet.cached_fixtures
         else
           Mongoid::FixtureSet.reset_cache
