@@ -1,0 +1,2 @@
+test1:
+  value: <%= count.to_s %>

@@ -69,10 +69,10 @@ module Mongoid
 
         if @@fixtures_loaded && self.class.load_fixtures_once && !Mongoid::FixtureSet.cache_empty?
           self.class.fixtures(:all)
-          @loaded_fixtures = Mongoid::FixtureSet.cached_fixtures
+          self.loaded_fixtures = Mongoid::FixtureSet.cached_fixtures
         else
           Mongoid::FixtureSet.reset_cache
-          @loaded_fixtures = load_fixtures
+          self.loaded_fixtures = load_fixtures
           @@fixtures_loaded = true
           @loaded_fixtures
         end
@@ -90,7 +90,10 @@ module Mongoid
           fixture_set_names = self.class.fixture_set_names
         end
         fixtures = Mongoid::FixtureSet.create_fixtures(fixture_path, fixture_set_names)
-        Hash[fixtures.map { |f| [f.name, f] }]
+      end
+
+      def loaded_fixtures=(fixtures)
+        @loaded_fixtures = Hash[fixtures.map { |f| [f.name, f] }]
       end
     end
   end
