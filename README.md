@@ -10,10 +10,8 @@ If you'd like to contribute, but pull requests are welcome!
 
 ## Install
 
-I still have to package the gem (once I consider it stable enough), so for the moment if you want to use it, you should use this github repo:
-
 ```ruby
-gem 'mongoid-fixture_set', github: 'Aethelflaed/mongoid-fixture_set'
+gem 'mongoid-fixture_set'
 ```
 
 ## How to use
