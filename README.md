@@ -59,10 +59,7 @@ Original fixtures from `ActiveRecord` also uses a selection based on `class_name
 
 I did not find how `ActiveRecord::TestFixtures` defines its `fixture_table_names` so I'm simply searching for *all* YAML files under `self.fixture_path`, which is enough for what I want.
 
-This gem sets the ID of each document to the UUID v5 generated from `#{model_class}##{fixture_name}`, so objects won't be created twice but simply updated it you try to create the same fixture again.
-This is used to set the relations, as we can compute a document ID before it even exists.
-
-Array attributes are also receiving a special treatment, i.e. they are joined with new values, not replaced by the new one. This is used for `has_and_belongs_to_many` relations.
+Array attributes are receiving a special treatment, i.e. they are joined with new values, not replaced by the new one. This is used for `has_and_belongs_to_many` relations.
 
 ## License
 

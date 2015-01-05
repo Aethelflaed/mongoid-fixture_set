@@ -3,8 +3,6 @@ require 'mongoid/fixture_set/file'
 require 'mongoid/fixture_set/class_cache'
 require 'mongoid/fixture_set/test_helper'
 
-require 'active_support/core_ext/digest/uuid'
-
 module Mongoid
   class FixtureSet
     @@cached_fixtures = Hash.new
@@ -89,24 +87,37 @@ module Mongoid
       end
 
       def create_or_update_document(model, attributes)
-        document = model.find_or_initialize_by('_id' => attributes['_id'])
-        keys = (attributes.keys + document.attributes.keys).uniq
-        attrs = Hash[keys.collect do |key|
-          if attributes[key].is_a?(Array) || document.attributes[key].is_a?(Array)
-            value = [attributes[key], document.attributes[key]].flatten(1).compact
-          else
-            value = attributes[key] || document.attributes[key]
-          end
-          [key, value]
-        end]
-        document.assign_attributes(attrs)
-        document.save(validate: false)
+        model = model.constantize if model.is_a? String
+
+        document = find_or_create_document(model, attributes['__fixture_name'])
+        update_document(document, attributes)
       end
 
-      # Returns a consistent, platform-independent identifier for +label+.
-      # UUIDs are RFC 4122 version 5 SHA-1 hashes.
-      def identify(model, label)
-        Digest::UUID.uuid_v5(Digest::UUID::OID_NAMESPACE, "#{model}##{label}").gsub('-', '')
+      def update_document(document, attributes)
+        attributes.delete('_id') if document.attributes.has_key?('_id')
+
+        keys = (attributes.keys + document.attributes.keys).uniq
+        keys.each do |key|
+          if attributes[key].is_a?(Array) || document[key].is_a?(Array)
+            document[key] = Array(attributes[key]) + Array(document[key])
+          else
+            document[key] = attributes[key] || document[key]
+          end
+        end
+        document.save(validate: false)
+        return document
+      end
+
+      def find_or_create_document(model, fixture_name)
+        model = model.constantize if model.is_a? String
+
+        document = model.where('__fixture_name' => fixture_name).first
+        if document.nil?
+          document = model.new
+          document['__fixture_name'] = fixture_name
+          document.save(validate: false)
+        end
+        return document
       end
     end
 
@@ -146,7 +157,14 @@ module Mongoid
       documents[class_name] = fixtures.map do |label, fixture|
         attributes = fixture.to_hash
 
+        attributes['__fixture_name'] = label
+
         next attributes if model_class.nil?
+
+        if !attributes.has_key?('_id')
+          document = self.class.find_or_create_document(model_class, label)
+          attributes['_id'] = document.id
+        end
 
         set_attributes_timestamps(attributes, model_class)
         
@@ -155,34 +173,30 @@ module Mongoid
           attributes[key] = value.gsub("$LABEL", label) if value.is_a?(String)
         end
 
-        attributes['_id'] = self.class.identify(class_name, label)
-
         model_class.relations.each do |name, relation|
           case relation.macro
           when :belongs_to
             if value = attributes.delete(relation.name.to_s)
-              id = self.class.identify(relation.class_name, value)
               if relation.polymorphic? && value.sub!(/\s*\(([^)]*)\)\s*/, '')
                 type = $1
                 attributes[relation.foreign_key.sub(/_id$/, '_type')] = type
-                id = self.class.identify(type, value)
+                attributes[relation.foreign_key] = self.class.find_or_create_document(type, value).id
+              else
+                attributes[relation.foreign_key] = self.class.find_or_create_document(relation.class_name, value).id
               end
-              attributes[relation.foreign_key] = id
             end
           when :has_many
             if values = attributes.delete(relation.name.to_s)
               values.each do |value|
-                id = self.class.identify(relation.class_name, value)
+                document = self.class.find_or_create_document(relation.class_name, value)
                 if relation.polymorphic?
-                  self.class.create_or_update_document(relation.class_name.constantize, {
-                    '_id' => id,
+                  self.class.update_document(document, {
                     "#{relation.as}_id" => attributes['_id'],
                     "#{relation.as}_type" => model_class.name,
                   })
                 else
-                  self.class.create_or_update_document(relation.class_name.constantize, {
-                    '_id' => id,
-                    relation.foreign_key => attributes['_id'],
+                  self.class.update_document(document, {
+                    relation.foreign_key => attributes['_id']
                   })
                 end
               end
@@ -193,12 +207,11 @@ module Mongoid
               attributes[key] = []
 
               values.each do |value|
-                id = self.class.identify(relation.class_name, value)
-                attributes[key] << id
+                document = self.class.find_or_create_document(relation.class_name, value)
+                attributes[key] << document.id
 
-                self.class.create_or_update_document(relation.class_name.constantize, {
-                  '_id' => id,
-                  relation.inverse_foreign_key => [attributes['_id']]
+                self.class.update_document(document, {
+                  relation.inverse_foreign_key => Array(attributes['_id'])
                 })
               end
             end
