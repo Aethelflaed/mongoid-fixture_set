@@ -3,6 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 require 'mongoid/fixture_set/version'
 
 Gem::Specification.new do |s|
+  s.license     = 'MIT'
   s.name        = 'mongoid-fixture_set'
   s.version     = Mongoid::FixtureSet::VERSION
   s.authors     = ['Geoffroy Planquart']
