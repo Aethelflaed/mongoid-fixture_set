@@ -29,6 +29,10 @@ module Mongoid
         @@cached_fixtures.clear
       end
 
+      def cache_empty?
+        @@cached_fixtures.empty?
+      end
+
       def fixture_is_cached?(name)
         @@cached_fixtures[name]
       end

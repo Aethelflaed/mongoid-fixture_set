@@ -18,8 +18,10 @@ module Mongoid
       included do
         class_attribute :fixture_path, :instance_writer => false
         class_attribute :fixture_set_names
+        class_attribute :load_fixtures_once
 
         self.fixture_set_names = []
+        self.load_fixtures_once = false
       end
 
       module ClassMethods
@@ -63,13 +65,20 @@ module Mongoid
 
       def setup_fixtures
         @fixture_cache = {}
+        @@fixtures_loaded ||= false
 
-        Mongoid::FixtureSet.reset_cache
-        @loaded_fixtures = load_fixtures
+        if @@fixtures_loaded && self.class.load_fixtures_once && !Mongoid::FixtureSet.cache_empty?
+          @loaded_fixtures = Mongoid::FixtureSet.cached_fixtures
+        else
+          Mongoid::FixtureSet.reset_cache
+          @loaded_fixtures = load_fixtures
+          @@fixtures_loaded = true
+          @loaded_fixtures
+        end
       end
 
       def teardown_fixtures
-        Mongoid::FixtureSet.reset_cache
+        Mongoid::FixtureSet.reset_cache unless self.class.load_fixtures_once
       end
 
       private
