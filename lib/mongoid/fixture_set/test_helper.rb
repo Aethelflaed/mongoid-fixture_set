@@ -58,7 +58,6 @@ module Mongoid
                end
                instances.size == 1 ? instances.first : instances
              end
-             private accessor_name
            end
          end
          include methods
