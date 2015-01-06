@@ -1,0 +1,4 @@
+will_fail:
+  name: will_fail
+  something:
+    name: NOK

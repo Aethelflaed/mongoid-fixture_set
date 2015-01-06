@@ -4,6 +4,10 @@ geoffroy:
   main_group: sudoers
   groups:
     - print
+  items:
+    - {
+      name: Test
+    }
 user1:
   firstname: Margot
   lastname: Last
@@ -14,3 +18,7 @@ user1:
       address:
         city: Strasbourg
         real: true
+user2:
+  firstname: user2
+  main_group:
+      name: Win?

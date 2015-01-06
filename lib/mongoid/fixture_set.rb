@@ -210,6 +210,16 @@ module Mongoid
           case relation.macro
           when :belongs_to
             if value = attributes.delete(relation.name.to_s)
+              if value.is_a? Hash
+                if relation.polymorphic?
+                  raise Mongoid::FixtureSet::FixtureError.new "Unable to create document from nested attributes in a polymorphic relation"
+                end
+                document = relation.class_name.constantize.new
+                document = self.class.update_document(document, value)
+                attributes[relation.foreign_key] = document.id
+                next
+              end
+
               if relation.polymorphic? && value.sub!(/\s*\(([^)]*)\)\s*/, '')
                 type = $1
                 attributes[relation.foreign_key.sub(/_id$/, '_type')] = type
@@ -221,6 +231,18 @@ module Mongoid
           when :has_many
             if values = attributes.delete(relation.name.to_s)
               values.each do |value|
+                if value.is_a? Hash
+                  document = relation.class_name.constantize.new
+                  if relation.polymorphic?
+                    value["#{relation.as}_id"] = attributes['_id']
+                    value["#{relation.as}_type"] = model_class.name
+                  else
+                    value[relation.foreign_key] = attributes['_id']
+                  end
+                  self.class.update_document(document, value)
+                  next
+                end
+
                 document = self.class.find_or_create_document(relation.class_name, value)
                 if relation.polymorphic?
                   self.class.update_document(document, {
