@@ -67,6 +67,48 @@ Documents are stored with a special attribute `__fixture_name` which is used to 
 
 Remove `__fixture_name` from documents, map it in a hash instead to get the ID.
 
+## Changes compared to ActiveRecord
+
+* There is an option to load fixtures only once.
+* Fixture accessor methods are defined publicly.
+
+This changes are here to let you create another class holding persistent data inside your tests.
+
+```ruby
+class TestData
+  include Mongoid::FixtureSet::TestHelper
+
+  self.fixture_path = "#{Rails.root}/test/fixtures_universes"
+  self.load_fixtures_once = true
+
+  def TestData.instance
+    @instance ||= ->(){
+      instance = new
+      instance.setup_fixtures
+      instance
+    }.call
+  end
+
+  private_class_method :new
+end
+
+class ActiveSupport::TestCase
+  include Mongoid::FixtureSet::TestHelper
+  self.fixture_path = "#{Rails.root}/test/fixtures"
+
+  def data
+    TestData.instance
+  end
+end
+
+# somewhere else
+test 'should validate complex data structure' do
+  assert_nothing_raised do
+    DataStructure.process(data.structures(:complex))
+  end
+end
+```
+
 ## License
 
 This project rocks and uses MIT-LICENSE.
