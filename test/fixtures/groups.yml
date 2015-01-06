@@ -5,6 +5,7 @@ print:
   name: Print
   users:
     - user1
+    - user 2é
 group1:
   name: Margot
   main_users:

@@ -67,7 +67,7 @@ module Mongoid
 
       assert_equal 1, user1.homes.count
       assert_equal geoffroy, f_geoffroy.find
-      assert_equal 2, print.users.count
+      assert_equal 3, print.users.count
       assert print.users.include?(geoffroy)
       assert print.users.include?(user1)
       assert sudoers.main_users.include?(geoffroy)

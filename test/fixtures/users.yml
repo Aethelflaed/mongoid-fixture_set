@@ -18,7 +18,7 @@ user1:
       address:
         city: Strasbourg
         real: true
-user2:
+user 2é:
   firstname: user2
   main_group:
       name: Win?
