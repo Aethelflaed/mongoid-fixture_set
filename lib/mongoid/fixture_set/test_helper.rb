@@ -19,9 +19,11 @@ module Mongoid
         class_attribute :fixture_path, :instance_writer => false
         class_attribute :fixture_set_names
         class_attribute :load_fixtures_once
+        class_attribute :cached_fixtures
 
         self.fixture_set_names = []
         self.load_fixtures_once = false
+        self.cached_fixtures = nil
       end
 
       module ClassMethods
@@ -65,21 +67,19 @@ module Mongoid
 
       def setup_fixtures
         @fixture_cache = {}
-        @@fixtures_loaded ||= false
 
-        if @@fixtures_loaded && self.class.load_fixtures_once && !Mongoid::FixtureSet.cache_empty?
+        if self.class.cached_fixtures && self.class.load_fixtures_once
           self.class.fixtures(:all)
-          self.loaded_fixtures = Mongoid::FixtureSet.cached_fixtures
+          @loaded_fixtures = self.class.cached_fixtures
         else
           Mongoid::FixtureSet.reset_cache
           self.loaded_fixtures = load_fixtures
-          @@fixtures_loaded = true
-          @loaded_fixtures
+          self.class.cached_fixtures = @loaded_fixtures
         end
       end
 
       def teardown_fixtures
-        Mongoid::FixtureSet.reset_cache unless self.class.load_fixtures_once
+        Mongoid::FixtureSet.reset_cache
       end
 
       private
@@ -93,7 +93,7 @@ module Mongoid
       end
 
       def loaded_fixtures=(fixtures)
-        @loaded_fixtures = Hash[fixtures.map { |f| [f.name, f] }]
+        @loaded_fixtures = Hash[fixtures.dup.map { |f| [f.name, f] }]
       end
     end
   end
