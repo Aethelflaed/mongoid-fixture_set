@@ -53,7 +53,7 @@ module Mongoid
                  if @loaded_fixtures[fs_name] && @loaded_fixtures[fs_name][f_name]
                    @fixture_cache[fs_name][f_name] ||= @loaded_fixtures[fs_name][f_name].find
                  else
-                   raise StandardError, "No fixture named '#{f_name}' found for fixture set '#{fs_name}'"
+                   raise FixtureNotFound, "No fixture named '#{f_name}' found for fixture set '#{fs_name}'"
                  end
                end
                instances.size == 1 ? instances.first : instances
@@ -68,7 +68,7 @@ module Mongoid
         @fixture_cache = {}
 
         if self.class.cached_fixtures && self.class.load_fixtures_once
-          self.class.fixtures(:all)
+          self.class.fixtures(self.class.fixture_set_names)
           @loaded_fixtures = self.class.cached_fixtures
         else
           Mongoid::FixtureSet.reset_cache

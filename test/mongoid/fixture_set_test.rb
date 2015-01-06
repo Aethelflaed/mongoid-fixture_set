@@ -52,7 +52,7 @@ module Mongoid
       f_geoffroy = users['geoffroy']
 
       assert_equal 6, School.count
-      assert_equal 5, User.count
+      assert_equal 6, User.count
 
       geoffroy = User.find_by(firstname: 'Geoffroy')
       user1 = User.find_by(firstname: 'Margot')
@@ -64,6 +64,9 @@ module Mongoid
       test_item = Item.find_by(name: 'Test')
       user2 = User.find_by(firstname: 'user2')
       win_group = Group.find_by(name: 'Win?')
+      test_nested_polymorphic_belongs_to = Group.find_by(name: 'Test nested polymorphic belongs_to')
+      test_nested_has_many_creation = Group.find_by(name: 'Test nested has_many creation')
+      User.find_by(firstname: 'Created in nested group')
 
       assert_equal 1, user1.homes.count
       assert_equal geoffroy, f_geoffroy.find
@@ -80,7 +83,7 @@ module Mongoid
       assert_equal group1, school.groups.first
       assert_equal school, group1.something
 
-      assert_equal 2, orga1.groups.count
+      assert_equal 3, orga1.groups.count
       assert orga1.groups.include?(sudoers)
       assert_equal orga1, sudoers.something
     end

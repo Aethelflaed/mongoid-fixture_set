@@ -1,3 +1,4 @@
+require 'mongoid/fixture_set/errors'
 require 'mongoid/fixture_set/fixture'
 require 'mongoid/fixture_set/file'
 require 'mongoid/fixture_set/class_cache'
@@ -114,13 +115,13 @@ module Mongoid
           case relation.macro
           when :embeds_one
             if (document.changes[name] && !document.changes[name][1].nil?) ||
-              is_new && document[name]
+              (is_new && document[name])
 
               embedded_document_set_default_values(document.public_send(relation.name), document[name])
             end
           when :embeds_many
             if (document.changes[name] && !document.changes[name][1].nil?) ||
-              is_new && document[name]
+              (is_new && document[name])
 
               embeddeds = document.public_send(relation.name)
               embeddeds.each_with_index do |embedded, i|
@@ -178,8 +179,6 @@ module Mongoid
       fixtures[x]
     end
 
-    # Returns a hash of documents to be inserted. The key is the model class, the value is
-    # a list of documents to insert in th relative collection.
     def collection_documents
       # allow a standard key to be used for doing defaults in YAML
       fixtures.delete('DEFAULTS')
@@ -188,99 +187,137 @@ module Mongoid
       documents = Hash.new
 
       documents[class_name] = fixtures.map do |label, fixture|
-        attributes = fixture.to_hash
-
-        attributes['__fixture_name'] = label
-
-        next attributes if model_class.nil?
-
-        if !attributes.has_key?('_id')
-          document = self.class.find_or_create_document(model_class, label)
-          attributes['_id'] = document.id
-        end
-
-        set_attributes_timestamps(attributes, model_class)
-        
-        # interpolate the fixture label
-        attributes.each do |key, value|
-          attributes[key] = value.gsub("$LABEL", label) if value.is_a?(String)
-        end
-
-        model_class.relations.each do |name, relation|
-          case relation.macro
-          when :belongs_to
-            if value = attributes.delete(relation.name.to_s)
-              if value.is_a? Hash
-                if relation.polymorphic?
-                  raise Mongoid::FixtureSet::FixtureError.new "Unable to create document from nested attributes in a polymorphic relation"
-                end
-                document = relation.class_name.constantize.new
-                document = self.class.update_document(document, value)
-                attributes[relation.foreign_key] = document.id
-                next
-              end
-
-              if relation.polymorphic? && value.sub!(/\s*\(([^)]*)\)\s*/, '')
-                type = $1
-                attributes[relation.foreign_key.sub(/_id$/, '_type')] = type
-                attributes[relation.foreign_key] = self.class.find_or_create_document(type, value).id
-              else
-                attributes[relation.foreign_key] = self.class.find_or_create_document(relation.class_name, value).id
-              end
-            end
-          when :has_many
-            if values = attributes.delete(relation.name.to_s)
-              values.each do |value|
-                if value.is_a? Hash
-                  document = relation.class_name.constantize.new
-                  if relation.polymorphic?
-                    value["#{relation.as}_id"] = attributes['_id']
-                    value["#{relation.as}_type"] = model_class.name
-                  else
-                    value[relation.foreign_key] = attributes['_id']
-                  end
-                  self.class.update_document(document, value)
-                  next
-                end
-
-                document = self.class.find_or_create_document(relation.class_name, value)
-                if relation.polymorphic?
-                  self.class.update_document(document, {
-                    "#{relation.as}_id" => attributes['_id'],
-                    "#{relation.as}_type" => model_class.name,
-                  })
-                else
-                  self.class.update_document(document, {
-                    relation.foreign_key => attributes['_id']
-                  })
-                end
-              end
-            end
-          when :has_and_belongs_to_many
-            if values = attributes.delete(relation.name.to_s)
-              key = "#{relation.name.to_s.singularize}_ids"
-              attributes[key] = []
-
-              values.each do |value|
-                document = self.class.find_or_create_document(relation.class_name, value)
-                attributes[key] << document.id
-
-                self.class.update_document(document, {
-                  relation.inverse_foreign_key => Array(attributes['_id'])
-                })
-              end
-            end
-          end
-        end
-
-        attributes
+        unmarshall_fixture(label, fixture, model_class)
       end
 
       return documents
     end
 
     private
-    def set_attributes_timestamps(attributes, model_class)
+    def unmarshall_fixture(label, attributes, model_class)
+      model_class = model_class.constantize if model_class.is_a? String
+      attributes = attributes.to_hash
+
+      if label
+        attributes['__fixture_name'] = label
+
+        # interpolate the fixture label
+        attributes.each do |key, value|
+          attributes[key] = value.gsub("$LABEL", label) if value.is_a?(String)
+        end
+      end
+
+      return attributes if model_class.nil?
+
+      if !attributes.has_key?('_id')
+        if label
+          document = self.class.find_or_create_document(model_class, label)
+        else
+          document = model_class.new
+        end
+        attributes['_id'] = document.id
+      end
+
+      set_attributes_timestamps(model_class, attributes)
+
+      model_class.relations.each_value do |relation|
+        case relation.macro
+        when :belongs_to
+          unmarshall_belongs_to(model_class, attributes, relation)
+        when :has_many
+          unmarshall_has_many(model_class, attributes, relation)
+        when :has_and_belongs_to_many
+          unmarshall_has_and_belongs_to_many(model_class, attributes, relation)
+        end
+      end
+
+      return attributes
+    end
+
+    def unmarshall_belongs_to(model_class, attributes, relation)
+      value = attributes.delete(relation.name.to_s)
+      return if value.nil?
+
+      if value.is_a? Hash
+        if relation.polymorphic?
+          raise Mongoid::FixtureSet::FixtureError.new "Unable to create document from nested attributes in a polymorphic relation"
+        end
+        document = relation.class_name.constantize.new
+        value = unmarshall_fixture(nil, value, relation.class_name)
+        document = self.class.update_document(document, value)
+        attributes[relation.foreign_key] = document.id
+        return
+      end
+
+      if relation.polymorphic? && value.sub!(/\s*\(([^)]*)\)\s*/, '')
+        type = $1
+        attributes[relation.inverse_type] = type
+        attributes[relation.foreign_key]  = self.class.find_or_create_document(type, value).id
+      else
+        attributes[relation.foreign_key]  = self.class.find_or_create_document(relation.class_name, value).id
+      end
+    end
+
+    def unmarshall_has_many(model_class, attributes, relation)
+      values = attributes.delete(relation.name.to_s)
+      return if values.nil?
+
+      values.each do |value|
+        if value.is_a? Hash
+          document = relation.class_name.constantize.new
+          if relation.polymorphic?
+            value[relation.foreign_key] = attributes['_id']
+            value[relation.type]        = model_class.name
+          else
+            value[relation.foreign_key] = attributes['_id']
+          end
+          value = unmarshall_fixture(nil, value, relation.class_name)
+          self.class.update_document(document, value)
+          next
+        end
+
+        document = self.class.find_or_create_document(relation.class_name, value)
+        if relation.polymorphic?
+          self.class.update_document(document, {
+            relation.foreign_key => attributes['_id'],
+            relation.type        => model_class.name,
+          })
+        else
+          self.class.update_document(document, {
+            relation.foreign_key => attributes['_id']
+          })
+        end
+      end
+    end
+
+    def unmarshall_has_and_belongs_to_many(model_class, attributes, relation)
+      values = attributes.delete(relation.name.to_s)
+      return if values.nil?
+
+      key = relation.foreign_key
+      attributes[key] = []
+
+      values.each do |value|
+        if value.is_a? Hash
+          document = relation.class_name.constantize.new
+          value[relation.inverse_foreign_key] = Array(attributes['_id'])
+          value = unmarshall_fixture(nil, value, relation.class_name)
+          self.class.update_document(document, value)
+          attributes[key] << document.id
+
+          next
+        end
+
+        document = self.class.find_or_create_document(relation.class_name, value)
+        attributes[key] << document.id
+
+        self.class.update_document(document, {
+          relation.inverse_foreign_key => Array(attributes['_id'])
+        })
+      end
+    end
+
+    def set_attributes_timestamps(model_class, attributes)
       now = Time.now.utc
 
       if model_class < Mongoid::Timestamps::Created::Short
