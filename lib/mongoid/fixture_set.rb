@@ -128,6 +128,15 @@ module Mongoid
                 embedded_document_set_default_values(embedded, document[name][i])
               end
             end
+          when :belongs_to
+            if is_new && document.attributes[name]
+              value = document.attributes.delete(name)
+              if value.is_a?(Hash)
+                raise Mongoid::FixtureSet::FixtureError.new "Unable to create nested document inside an embedded document"
+              end
+              doc = find_or_create_document(relation.class_name, value)
+              document.attributes[relation.foreign_key] = doc.id
+            end
           end
         end
       end

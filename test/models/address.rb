@@ -5,5 +5,7 @@ class Address
 
   field :city
   field :real, type: Boolean, default: true
+
+  belongs_to :organisation
 end
 

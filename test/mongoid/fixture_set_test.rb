@@ -68,6 +68,7 @@ module Mongoid
       test_nested_has_many_creation = Group.find_by(name: 'Test nested has_many creation')
       User.find_by(firstname: 'Created in nested group')
 
+      assert_equal user1.address.organisation, orga1
       assert_equal 1, user1.homes.count
       assert_equal geoffroy, f_geoffroy.find
       assert_equal 3, print.users.count
