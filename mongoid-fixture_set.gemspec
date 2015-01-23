@@ -16,8 +16,7 @@ Gem::Specification.new do |s|
   s.files       = Dir['{lib}/**/*', 'MIT-LICENSE', 'Rakefile', 'README.rdoc']
   s.test_files  = Dir['test/**/*']
 
-  s.add_dependency 'mongoid',       '~> 4.0.0'
+  s.add_dependency 'mongoid',       '~> 4.0'
   s.add_dependency 'activesupport', '~> 4.0'
-  s.add_development_dependency 'rake', '>= 0.9'
 end
 

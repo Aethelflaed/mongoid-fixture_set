@@ -61,11 +61,9 @@ I did not find how `ActiveRecord::TestFixtures` defines its `fixture_table_names
 
 Array attributes are receiving a special treatment, i.e. they are joined with new values, not replaced by the new one. This is used for `has_and_belongs_to_many` relations.
 
-Documents are stored with a special attribute `__fixture_name` which is used to retrieve it and establish relations
+Documents are stored with a special attribute `__fixture_name` which is used to retrieve it and establish relations.
 
-## Todo
-
-Remove `__fixture_name` from documents, map it in a hash instead to get the ID.
+`Mongoid::Document` has an `attr_accessor` defined for `__fixture_name` so it doesn't pose any problem if you try to `dup` a document for example.
 
 ## Changes compared to ActiveRecord
 
